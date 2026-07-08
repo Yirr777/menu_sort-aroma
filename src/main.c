@@ -12,6 +12,7 @@
 #include <vpad/input.h>
 #include <whb/proc.h>
 #include <mocha/mocha.h>
+#include <sysapp/launch.h>
 
 #include "act_wrapper.h"
 #include "utils/screen.h"
@@ -626,12 +627,8 @@ int main(void)
         sprintf(countText, "Items count: %d/%d", itemsCount, MAX_ITEMS_COUNT);
         screenPrint(countText);
     }
-    screenPrint("Press any button to exit (closing automatically)...");
+    screenPrint("Press any button to exit...");
 
-    /* Whether HOME actually reaches the app (rather than being swallowed by
-     * the system overlay) depends on how the app was launched, so don't
-     * gate the exit on that one button alone - accept anything, and cap the
-     * wait so this can never hang even if no input is detected at all. */
     for (int waitedMs = 0; WHBProcIsRunning() && waitedMs < 15000; waitedMs += 20)
     {
         VPADRead(VPAD_CHAN_0, &vpad, 1, &vpadError);
@@ -659,6 +656,14 @@ prgEnd:
         Mocha_UnmountFS("storage_usb");
         Mocha_DeInitLibrary();
     }
+
+    /* Returning from main() without going through this handshake leaves
+     * ProcUI waiting for an acknowledgement that never comes, which softlocks
+     * the console instead of returning to the menu - see
+     * https://maschell.github.io/homebrew/2023/04/30/incompatible-homebrews.html */
+    SYSLaunchMenu();
+    while (WHBProcIsRunning())
+        OSSleepTicks(OSMillisecondsToTicks(20));
 
     screenShutdown();
     WHBProcShutdown();
