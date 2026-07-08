@@ -657,6 +657,12 @@ prgEnd:
         Mocha_DeInitLibrary();
     }
 
+    /* Release the screen before asking to go back to the menu: the
+     * incoming Wii U Menu needs to claim the display itself, and can't
+     * while we're still holding OSScreen open - otherwise it hangs on its
+     * boot logo waiting for a resource we never let go of. */
+    screenShutdown();
+
     /* Returning from main() without going through this handshake leaves
      * ProcUI waiting for an acknowledgement that never comes, which softlocks
      * the console instead of returning to the menu - see
@@ -665,7 +671,6 @@ prgEnd:
     while (WHBProcIsRunning())
         OSSleepTicks(OSMillisecondsToTicks(20));
 
-    screenShutdown();
     WHBProcShutdown();
 
     return 0;
