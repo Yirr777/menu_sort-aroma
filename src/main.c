@@ -206,16 +206,25 @@ static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
 {
     char serialId[32];
     if (!getConsoleSerialId(serialId, sizeof(serialId)) || serialId[0] == 0)
+    {
+        screenPrint("[homp cache] could not read console serial id");
         return;
+    }
 
     char cachePath[192];
     snprintf(cachePath, sizeof(cachePath),
              "fs:/vol/external01/wiiu/homebrew_on_menu_plugin/%s/save/%08x/BaristaAccountSaveFile.dat",
              serialId, 0x80000000u | userPersistentId);
 
+    screenPrint("[homp cache] serial='%s'", serialId);
+    screenPrint("[homp cache] path=%s", cachePath);
+
     FILE *fp = fopen(cachePath, "rb");
     if (!fp)
+    {
+        screenPrint("[homp cache] not found, nothing to delete");
         return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to do.
+    }
     fclose(fp);
 
     /* Delete rather than overwrite: the plugin recreates it by copying from
@@ -224,7 +233,8 @@ static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
      * path derivation staying byte-for-byte identical to a future version
      * of the plugin's - a stale cache we fail to delete is a no-op, not a
      * wrong write. */
-    remove(cachePath);
+    int res = remove(cachePath);
+    screenPrint("[homp cache] found, remove() = %d", res);
 }
 
 int main(void)
