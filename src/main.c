@@ -182,12 +182,16 @@ static int getConsoleSerialId(char *out, size_t outSize)
     out[0] = 0;
     int handle = MCP_Open();
     if (handle < 0)
+    {
+        screenPrint("[homp cache] MCP_Open() = %d", handle);
         return 0;
+    }
 
     int ok = 0;
     MCPSysProdSettings settings;
     memset(&settings, 0, sizeof(settings));
-    if (MCP_GetSysProdSettings(handle, &settings) == 0)
+    int res = MCP_GetSysProdSettings(handle, &settings);
+    if (res == 0)
     {
         char codeId[sizeof(settings.code_id) + 1];
         char serialId[sizeof(settings.serial_id) + 1];
@@ -197,6 +201,10 @@ static int getConsoleSerialId(char *out, size_t outSize)
         serialId[sizeof(settings.serial_id)] = 0;
         snprintf(out, outSize, "%s%s", codeId, serialId);
         ok = 1;
+    }
+    else
+    {
+        screenPrint("[homp cache] MCP_GetSysProdSettings() = %d", res);
     }
     MCP_Close(handle);
     return ok;
