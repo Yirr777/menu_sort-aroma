@@ -626,20 +626,19 @@ int main(void)
         sprintf(countText, "Items count: %d/%d", itemsCount, MAX_ITEMS_COUNT);
         screenPrint(countText);
     }
-    screenPrint("Press Home to exit");
+    screenPrint("Press any button to exit (closing automatically)...");
 
-    while (WHBProcIsRunning())
+    /* Whether HOME actually reaches the app (rather than being swallowed by
+     * the system overlay) depends on how the app was launched, so don't
+     * gate the exit on that one button alone - accept anything, and cap the
+     * wait so this can never hang even if no input is detected at all. */
+    for (int waitedMs = 0; WHBProcIsRunning() && waitedMs < 15000; waitedMs += 20)
     {
         VPADRead(VPAD_CHAN_0, &vpad, 1, &vpadError);
-        uint32_t pressedBtns = 0;
-
-        if (vpadError == VPAD_READ_SUCCESS)
-            pressedBtns = vpad.trigger | vpad.hold;
-
-        if (pressedBtns & VPAD_BUTTON_HOME)
+        if (vpadError == VPAD_READ_SUCCESS && vpad.trigger != 0)
             break;
 
-        OSSleepTicks(OSMillisecondsToTicks(1));
+        OSSleepTicks(OSMillisecondsToTicks(20));
     }
     failed = 0;
 
