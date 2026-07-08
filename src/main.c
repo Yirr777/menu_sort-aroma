@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include <coreinit/dynload.h>
+#include <coreinit/mcp.h>
 #include <coreinit/thread.h>
 #include <coreinit/time.h>
 #include <vpad/input.h>
@@ -164,6 +165,60 @@ static uint64_t sysGetSystemApplicationTitleId(int32_t index)
         return 0;
 
     return fn(index);
+}
+
+/* The "Homebrew On Wii U Menu" plugin (widely used with Aroma) redirects the
+ * Wii U Menu's own read of BaristaAccountSaveFile.dat to a copy it keeps on
+ * the SD card, so homebrew stays visible even without the plugin active -
+ * but per its own docs it only ever *creates* that copy once and never
+ * refreshes it, so changes we make to the real save file are invisible to
+ * the Wii U Menu while that plugin is loaded. Mirror our write there too
+ * (only if that cache already exists - if it doesn't, the plugin hasn't
+ * been used yet and will correctly pick up our already-updated data itself).
+ * Path/logic mirrors https://github.com/wiiu-env/homebrew_on_menu_plugin
+ * (src/SaveRedirection.cpp, src/utils/utils.cpp GetSerialId). */
+static int getConsoleSerialId(char *out, size_t outSize)
+{
+    out[0] = 0;
+    int handle = MCP_Open();
+    if (handle < 0)
+        return 0;
+
+    int ok = 0;
+    MCPSysProdSettings settings;
+    memset(&settings, 0, sizeof(settings));
+    if (MCP_GetSysProdSettings(handle, &settings) == 0)
+    {
+        char codeId[sizeof(settings.code_id) + 1];
+        char serialId[sizeof(settings.serial_id) + 1];
+        memcpy(codeId, settings.code_id, sizeof(settings.code_id));
+        codeId[sizeof(settings.code_id)] = 0;
+        memcpy(serialId, settings.serial_id, sizeof(settings.serial_id));
+        serialId[sizeof(settings.serial_id)] = 0;
+        snprintf(out, outSize, "%s%s", codeId, serialId);
+        ok = 1;
+    }
+    MCP_Close(handle);
+    return ok;
+}
+
+static void syncHomebrewOnMenuPluginCache(const char *baristaPath, uint32_t userPersistentId)
+{
+    char serialId[32];
+    if (!getConsoleSerialId(serialId, sizeof(serialId)) || serialId[0] == 0)
+        return;
+
+    char cachePath[192];
+    snprintf(cachePath, sizeof(cachePath),
+             "fs:/vol/external01/wiiu/homebrew_on_menu_plugin/%s/save/%08x/BaristaAccountSaveFile.dat",
+             serialId, 0x80000000u | userPersistentId);
+
+    FILE *fp = fopen(cachePath, "rb");
+    if (!fp)
+        return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to keep in sync.
+    fclose(fp);
+
+    fcopy(baristaPath, cachePath);
 }
 
 int main(void)
@@ -444,6 +499,7 @@ int main(void)
     else if (restore)
     {
         fcopy(backupPath, baristaPath);
+        syncHomebrewOnMenuPluginCache(baristaPath, userPersistentId);
     }
     else
     {
@@ -548,16 +604,6 @@ int main(void)
             {
                 qsort(menuItem, movableItemsCount, sizeof(struct MenuItemStruct), fSortCond);
 
-                if (fNum == 0)
-                {
-                    /* Diagnostic: confirm titles are actually being named
-                     * (and thus actually comparable/sortable) rather than
-                     * silently coming back blank from meta.xml. */
-                    screenPrint("Names read (main menu):");
-                    for (int dbg = 0; dbg < movableItemsCount && dbg < 5; dbg++)
-                        screenPrint(" [%d] '%s'", dbg, menuItem[dbg].name);
-                }
-
                 currItemNum = 0;
                 for (int i = 0; i < maxItemsCount; i++)
                 {
@@ -605,6 +651,7 @@ int main(void)
             {
                 fwrite(fBuffer, 1, fSize, fp);
                 fclose(fp);
+                syncHomebrewOnMenuPluginCache(baristaPath, userPersistentId);
             }
             else
             {
