@@ -149,13 +149,13 @@ static void getIDname(uint32_t id, uint32_t titleIDPrefix, char *name, size_t na
 }
 
 /* _SYSGetSystemApplicationTitleId isn't wrapped by wut; resolve it the same
- * way the system itself does, via a coreinit export lookup. */
+ * way the system itself does, via a sysapp.rpl export lookup. */
 typedef uint64_t (*SYSGetSystemApplicationTitleIdFn)(int32_t);
 
 static uint64_t sysGetSystemApplicationTitleId(int32_t index)
 {
     OSDynLoad_Module module;
-    if (OSDynLoad_Acquire("coreinit.rpl", &module) != OS_DYNLOAD_OK)
+    if (OSDynLoad_Acquire("sysapp.rpl", &module) != OS_DYNLOAD_OK)
         return 0;
 
     SYSGetSystemApplicationTitleIdFn fn = NULL;
