@@ -314,20 +314,13 @@ int main(void)
     usb_Connected = Mocha_MountFS("storage_usb", NULL, "/vol/storage_usb01") == MOCHA_RESULT_SUCCESS;
 
     // Get Country Code. Really should use SCIGetCafeLanguage(), but until
-    // then, just read cafe.xml.
+    // then, just read cafe.xml. This only affects which meta.xml field is
+    // used to display a title's name while sorting, so a failure here isn't
+    // fatal - backup/restore/count don't need it at all, and sorting just
+    // falls back to the "longname_en" default set at startup.
+    if (readToBuffer(&fBuffer, &fSize, cafeXmlPath) == 0 && fBuffer != NULL)
     {
-        int language = 0;
-        if (readToBuffer(&fBuffer, &fSize, cafeXmlPath) < 0)
-        {
-            strcpy(failError, "Could not open cafe.xml\n");
-            goto prgEnd;
-        }
-        if (fBuffer == NULL)
-        {
-            strcpy(failError, "Memory not allocated for cafe.xml\n");
-            goto prgEnd;
-        }
-        language = getXMLelementInt(fBuffer, fSize, "language", 10);
+        int language = getXMLelementInt(fBuffer, fSize, "language", 10);
         if (language < 0 || language >= (int)(sizeof(languages) / sizeof(languages[0])))
             language = 1; // EN
         sprintf(languageText, "longname_%s", languages[language]);
@@ -335,25 +328,19 @@ int main(void)
         fBuffer = NULL;
     }
 
-    // Get CBHC Title. If syshax.xml exists, then assume cbhc exists.
+    // Get CBHC Title. If syshax.xml exists, then assume cbhc exists. Also
+    // not fatal - worst case the CBHC title just isn't excluded from sorting.
     {
         FILE *fp = fopen(syshaxXmlPath, "rb");
         if (fp)
         {
             fclose(fp);
-            if (readToBuffer(&fBuffer, &fSize, systemXmlPath) < 0)
+            if (readToBuffer(&fBuffer, &fSize, systemXmlPath) == 0 && fBuffer != NULL)
             {
-                strcpy(failError, "Could not open system.xml\n");
-                goto prgEnd;
+                cbhcID = (uint32_t)getXMLelementInt(fBuffer, fSize, "default_title_id", 10);
+                free(fBuffer);
+                fBuffer = NULL;
             }
-            if (fBuffer == NULL)
-            {
-                strcpy(failError, "Memory not allocated for system.xml\n");
-                goto prgEnd;
-            }
-            cbhcID = (uint32_t)getXMLelementInt(fBuffer, fSize, "default_title_id", 10);
-            free(fBuffer);
-            fBuffer = NULL;
         }
     }
 
