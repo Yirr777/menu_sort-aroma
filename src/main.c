@@ -182,7 +182,6 @@ int main(void)
     uint32_t userPersistentId = 0;
 
     screenInit();
-    screenClear();
     screenPrint(TITLE_TEXT);
     screenPrint("Choose sorting method:");
     screenPrint("Press 'B' for standard sorting.");
@@ -268,9 +267,6 @@ int main(void)
         OSSleepTicks(OSMillisecondsToTicks(1));
     }
 
-    screenClear();
-    screenSetPrintLine(0);
-    screenPrint(TITLE_TEXT);
     char modeSelectedText[50] = "";
     sprintf(modeSelectedText, "Starting %s%s...", modeText, ignoreTheText);
     screenPrint(modeSelectedText);
@@ -614,7 +610,7 @@ int main(void)
         dmItem = NULL;
     }
 
-    screenPrintAt(strlen(modeSelectedText), screenGetPrintLine(), "done.");
+    screenPrint("done.");
 
     {
         char text[20] = "";
