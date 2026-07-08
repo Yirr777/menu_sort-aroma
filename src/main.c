@@ -182,16 +182,14 @@ static int getConsoleSerialId(char *out, size_t outSize)
     out[0] = 0;
     int handle = MCP_Open();
     if (handle < 0)
-    {
-        screenPrint("[homp cache] MCP_Open() = %d", handle);
         return 0;
-    }
 
     int ok = 0;
-    MCPSysProdSettings settings;
+    /* The MCP IPC command needs a 0x40-aligned buffer - without this,
+     * MCP_GetSysProdSettings fails to fill in settings at all. */
+    MCPSysProdSettings settings __attribute__((aligned(0x40)));
     memset(&settings, 0, sizeof(settings));
-    int res = MCP_GetSysProdSettings(handle, &settings);
-    if (res == 0)
+    if (MCP_GetSysProdSettings(handle, &settings) == 0)
     {
         char codeId[sizeof(settings.code_id) + 1];
         char serialId[sizeof(settings.serial_id) + 1];
@@ -202,10 +200,6 @@ static int getConsoleSerialId(char *out, size_t outSize)
         snprintf(out, outSize, "%s%s", codeId, serialId);
         ok = 1;
     }
-    else
-    {
-        screenPrint("[homp cache] MCP_GetSysProdSettings() = %d", res);
-    }
     MCP_Close(handle);
     return ok;
 }
@@ -214,25 +208,16 @@ static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
 {
     char serialId[32];
     if (!getConsoleSerialId(serialId, sizeof(serialId)) || serialId[0] == 0)
-    {
-        screenPrint("[homp cache] could not read console serial id");
         return;
-    }
 
     char cachePath[192];
     snprintf(cachePath, sizeof(cachePath),
              "fs:/vol/external01/wiiu/homebrew_on_menu_plugin/%s/save/%08x/BaristaAccountSaveFile.dat",
              serialId, 0x80000000u | userPersistentId);
 
-    screenPrint("[homp cache] serial='%s'", serialId);
-    screenPrint("[homp cache] path=%s", cachePath);
-
     FILE *fp = fopen(cachePath, "rb");
     if (!fp)
-    {
-        screenPrint("[homp cache] not found, nothing to delete");
         return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to do.
-    }
     fclose(fp);
 
     /* Delete rather than overwrite: the plugin recreates it by copying from
@@ -241,8 +226,7 @@ static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
      * path derivation staying byte-for-byte identical to a future version
      * of the plugin's - a stale cache we fail to delete is a no-op, not a
      * wrong write. */
-    int res = remove(cachePath);
-    screenPrint("[homp cache] found, remove() = %d", res);
+    remove(cachePath);
 }
 
 int main(void)
