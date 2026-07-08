@@ -548,6 +548,16 @@ int main(void)
             {
                 qsort(menuItem, movableItemsCount, sizeof(struct MenuItemStruct), fSortCond);
 
+                if (fNum == 0)
+                {
+                    /* Diagnostic: confirm titles are actually being named
+                     * (and thus actually comparable/sortable) rather than
+                     * silently coming back blank from meta.xml. */
+                    screenPrint("Names read (main menu):");
+                    for (int dbg = 0; dbg < movableItemsCount && dbg < 5; dbg++)
+                        screenPrint(" [%d] '%s'", dbg, menuItem[dbg].name);
+                }
+
                 currItemNum = 0;
                 for (int i = 0; i < maxItemsCount; i++)
                 {
