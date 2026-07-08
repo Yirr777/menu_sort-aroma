@@ -12,7 +12,6 @@
 #include <vpad/input.h>
 #include <whb/proc.h>
 #include <mocha/mocha.h>
-#include <sysapp/launch.h>
 
 #include "act_wrapper.h"
 #include "utils/screen.h"
@@ -623,24 +622,11 @@ int main(void)
         sprintf(countText, "Items count: %d/%d", itemsCount, MAX_ITEMS_COUNT);
         screenPrint(countText);
     }
-    screenPrint("Press any button to exit...");
-
-    for (int waitedMs = 0; WHBProcIsRunning() && waitedMs < 15000; waitedMs += 20)
-    {
-        VPADRead(VPAD_CHAN_0, &vpad, 1, &vpadError);
-        if (vpadError == VPAD_READ_SUCCESS && vpad.trigger != 0)
-            break;
-
-        OSSleepTicks(OSMillisecondsToTicks(20));
-    }
     failed = 0;
 
 prgEnd:
     if (failed && failError[0])
-    {
         screenPrint(failError);
-        OSSleepTicks(OSSecondsToTicks(5));
-    }
 
     if (fBuffer)
         free(fBuffer);
@@ -653,17 +639,13 @@ prgEnd:
         Mocha_DeInitLibrary();
     }
 
-    /* Release the screen before asking to go back to the menu: the
-     * incoming Wii U Menu needs to claim the display itself, and can't
-     * while we're still holding OSScreen open - otherwise it hangs on its
-     * boot logo waiting for a resource we never let go of. */
-    screenShutdown();
-
-    /* Returning from main() without going through this handshake leaves
-     * ProcUI waiting for an acknowledgement that never comes, which softlocks
-     * the console instead of returning to the menu - see
-     * https://maschell.github.io/homebrew/2023/04/30/incompatible-homebrews.html */
-    SYSLaunchMenu();
+    /* Press HOME to bring up the system overlay and pick "Home Menu" to
+     * exit, same as every other homebrew app - WHBProcIsRunning() reports
+     * false once that's done. Forcing the transition ourselves via
+     * SYSLaunchMenu() got us out reliably too, but consistently left the
+     * GamePad screen black afterwards; letting the OS-driven overlay flow
+     * (which every other app already relies on) run its course avoids that. */
+    screenPrint("Press HOME to return to the Wii U Menu.");
     while (WHBProcIsRunning())
         OSSleepTicks(OSMillisecondsToTicks(20));
 
