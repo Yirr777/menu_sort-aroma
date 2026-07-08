@@ -202,7 +202,7 @@ static int getConsoleSerialId(char *out, size_t outSize)
     return ok;
 }
 
-static void syncHomebrewOnMenuPluginCache(const char *baristaPath, uint32_t userPersistentId)
+static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
 {
     char serialId[32];
     if (!getConsoleSerialId(serialId, sizeof(serialId)) || serialId[0] == 0)
@@ -215,10 +215,16 @@ static void syncHomebrewOnMenuPluginCache(const char *baristaPath, uint32_t user
 
     FILE *fp = fopen(cachePath, "rb");
     if (!fp)
-        return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to keep in sync.
+        return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to do.
     fclose(fp);
 
-    fcopy(baristaPath, cachePath);
+    /* Delete rather than overwrite: the plugin recreates it by copying from
+     * the real save file (which we've already fixed) the next time it
+     * initializes, so this is just as correct without depending on our own
+     * path derivation staying byte-for-byte identical to a future version
+     * of the plugin's - a stale cache we fail to delete is a no-op, not a
+     * wrong write. */
+    remove(cachePath);
 }
 
 int main(void)
@@ -499,7 +505,7 @@ int main(void)
     else if (restore)
     {
         fcopy(backupPath, baristaPath);
-        syncHomebrewOnMenuPluginCache(baristaPath, userPersistentId);
+        deleteStaleHomebrewOnMenuPluginCache(userPersistentId);
     }
     else
     {
@@ -651,7 +657,7 @@ int main(void)
             {
                 fwrite(fBuffer, 1, fSize, fp);
                 fclose(fp);
-                syncHomebrewOnMenuPluginCache(baristaPath, userPersistentId);
+                deleteStaleHomebrewOnMenuPluginCache(userPersistentId);
             }
             else
             {
