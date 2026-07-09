@@ -524,6 +524,15 @@ int main(void)
             goto prgEnd;
         }
 
+        if (!count)
+        {
+            // Always back up the current (pristine, not-yet-modified) order
+            // before an actual sort touches it, regardless of whether the
+            // user also explicitly asked for one via '+'.
+            fcopy(baristaPath, backupPath);
+            screenPrint("Backed up current order first.");
+        }
+
         // Main Menu - First pass - Get names. Only movable items are added.
         for (int fNum = 0; fNum <= 60; fNum++)
         {
