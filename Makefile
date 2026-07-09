@@ -15,7 +15,7 @@ TOPDIR ?= $(CURDIR)
 #-------------------------------------------------------------------------------
 APP_NAME	:= Menu Sort
 APP_SHORTNAME	:= Menu Sort
-APP_AUTHOR	:= Yardape8000, doino-gretchenliev
+APP_AUTHOR	:= Yardape8000, doino-gretchenliev (Aroma port: Yirr777)
 
 include $(DEVKITPRO)/wut/share/wut_rules
 

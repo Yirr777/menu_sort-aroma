@@ -5,6 +5,8 @@ Yardape8000 and doino-gretchenliev) from the legacy Homebrew Launcher toolchain 
 [Aroma](https://aroma.foryour.cafe/) environment, using [wut](https://github.com/devkitPro/wut) and
 [libmocha](https://github.com/wiiu-env/libmocha) instead of the old `dynamic_libs`/`libiosuhax` stack.
 
+Aroma port by [Yirr777](https://github.com/Yirr777).
+
 With Wii U Menu Sorter you can alphabetically sort icons on the Wii U Menu, per user account.
 
 The following items will not move: folders and system icons (Disc, Settings, etc), the Homebrew
