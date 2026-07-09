@@ -603,6 +603,16 @@ int main(void)
 
                     memcpy(&menuItem[currItemNum].titleIDPrefix, fBuffer + itemOffset, sizeof(uint32_t));
                     getIDname(id, menuItem[currItemNum].titleIDPrefix, menuItem[currItemNum].name, 65, type);
+                    if (menuItem[currItemNum].name[0] == 0)
+                    {
+                        /* No readable meta.xml (e.g. a Homebrew Launcher
+                         * channel/forwarder installed under its own title id,
+                         * which varies by install method and isn't covered by
+                         * HBL_TITLE_ID) - leave it in place rather than
+                         * sorting an unnamed entry to one end of the list. */
+                        moveableItem[i] = false;
+                        continue;
+                    }
                     menuItem[currItemNum].ID = id;
                     menuItem[currItemNum].type = type;
                     currItemNum++;
@@ -613,19 +623,6 @@ int main(void)
             if (!count)
             {
                 qsort(menuItem, movableItemsCount, sizeof(struct MenuItemStruct), fSortCond);
-
-                if (fNum == 0)
-                {
-                    /* Diagnostic: dump the first/last sorted main-menu
-                     * entries to see the raw idH:id:type of whatever ended
-                     * up last, in case it's a homebrew-injected fake title
-                     * with an id scheme our exclusion checks don't know
-                     * about. */
-                    for (int dbg = 0; dbg < movableItemsCount && dbg < 3; dbg++)
-                        screenPrint("[%d] %08x:%08x t%d '%s'", dbg, menuItem[dbg].titleIDPrefix, menuItem[dbg].ID, menuItem[dbg].type, menuItem[dbg].name);
-                    for (int dbg = movableItemsCount > 3 ? movableItemsCount - 3 : 3; dbg < movableItemsCount; dbg++)
-                        screenPrint("[%d] %08x:%08x t%d '%s'", dbg, menuItem[dbg].titleIDPrefix, menuItem[dbg].ID, menuItem[dbg].type, menuItem[dbg].name);
-                }
 
                 currItemNum = 0;
                 for (int i = 0; i < maxItemsCount; i++)
