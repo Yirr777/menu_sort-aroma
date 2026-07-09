@@ -20,6 +20,7 @@
 #include "utils/string.h"
 #include "utils/file.h"
 #include "utils/xmltext.h"
+#include "utils/vcplatform.h"
 
 #define TITLE_TEXT "Sort Wii U Menu v1.2.0 (Aroma) - Yardape8000 & doino-gretchenliev"
 #define HBL_TITLE_ID 0x13374842
@@ -30,6 +31,7 @@ static const char *syshaxXmlPath = "storage_slc:/config/syshax.xml";
 static const char *systemXmlPath = "storage_slc:/config/system.xml";
 static const char *dontmovePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove";
 static const char *gamemapPath = "fs:/vol/external01/wiiu/apps/menu_sort/titlesmap";
+static const char *vcPlatformPath = "fs:/vol/external01/wiiu/apps/menu_sort/vc_platforms.psv";
 static const char *backupPath = "fs:/vol/external01/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat";
 static const char *languages[] = {"JA", "EN", "FR", "DE", "IT", "ES", "ZHS", "KO", "NL", "PT", "RU", "ZHT"};
 static char languageText[14] = "longname_en";
@@ -39,6 +41,7 @@ static int ignoreThe = 0;
 static int backup = 0;
 static int restore = 0;
 static int count = 0;
+static int organize = 0;
 
 struct MenuItemStruct
 {
@@ -56,6 +59,247 @@ enum itemTypes
     MENU_ITEM_VWII = 0x09,
     MENU_ITEM_FLDR = 0x10
 };
+
+/* Folder N's data (see the file format notes at the end of this file) lives
+ * at BARISTA_FOLDER_BASE_OFFSET + (N-1)*BARISTA_FOLDER_STRIDE, as a 60-item
+ * NAND array, then a 60-item USB array, then a 56-byte info block (name +
+ * color). */
+#define BARISTA_FOLDER_BASE_OFFSET 0x002D24
+#define BARISTA_FOLDER_ITEM_COUNT 60
+#define BARISTA_FOLDER_STRIDE (BARISTA_FOLDER_ITEM_COUNT * 16 * 2 + 56)
+#define BARISTA_FOLDER_USB_OFFSET (BARISTA_FOLDER_ITEM_COUNT * 16)
+#define BARISTA_FOLDER_INFO_OFFSET (BARISTA_FOLDER_ITEM_COUNT * 16 * 2)
+#define BARISTA_FOLDER_NAME_CHARS 17
+#define BARISTA_FOLDER_COLOR_OFFSET 0x32
+#define BARISTA_FOLDER_INFO_SIZE 56
+
+static int folderDataOffsetFor(int folderId)
+{
+    return BARISTA_FOLDER_BASE_OFFSET + (folderId - 1) * BARISTA_FOLDER_STRIDE;
+}
+
+static int folderInfoOffsetFor(int folderId)
+{
+    return folderDataOffsetFor(folderId) + BARISTA_FOLDER_INFO_OFFSET;
+}
+
+/* Folder names are stored as fixed-length UTF-16BE; our platform/console
+ * names are plain ASCII, so a byte-level round trip is all we need. */
+static void utf16beToAscii(const uint8_t *src, int maxChars, char *out, size_t outSize)
+{
+    size_t o = 0;
+    for (int i = 0; i < maxChars && o < outSize - 1; i++)
+    {
+        uint16_t ch = ((uint16_t)src[i * 2] << 8) | src[i * 2 + 1];
+        if (ch == 0)
+            break;
+        out[o++] = (ch < 128) ? (char)ch : '?';
+    }
+    out[o] = 0;
+}
+
+static void asciiToUtf16be(const char *in, uint8_t *dst, int maxChars)
+{
+    int i;
+    for (i = 0; in[i] != 0 && i < maxChars; i++)
+    {
+        dst[i * 2] = 0;
+        dst[i * 2 + 1] = (uint8_t)in[i];
+    }
+    for (; i < maxChars; i++)
+    {
+        dst[i * 2] = 0;
+        dst[i * 2 + 1] = 0;
+    }
+}
+
+/* An entry's 16 bytes are all zero (title id 0, no type) when the slot is
+ * genuinely free - matches how the existing sort/write-back logic already
+ * treats id==0 as "nothing here", regardless of a possibly-stale type byte
+ * left over from a previous write. */
+static int entryIsEmpty(const char *fBuffer, int offset)
+{
+    uint32_t idH = 0, id = 0;
+    memcpy(&idH, fBuffer + offset, sizeof(uint32_t));
+    memcpy(&id, fBuffer + offset + 4, sizeof(uint32_t));
+    return idH == 0 && id == 0;
+}
+
+/* Finds a folder already named folderName (case-insensitive), or creates a
+ * new one (a free folder id 1-60, a free main-menu slot for its icon, and
+ * its info block) if none exists. Returns the folder id, or 0 if there's no
+ * room left for a new folder. */
+static int findOrCreateFolder(char *fBuffer, bool folderExists[61], const char *folderName)
+{
+    char name[BARISTA_FOLDER_NAME_CHARS + 1];
+    for (int fid = 1; fid <= 60; fid++)
+    {
+        if (!folderExists[fid])
+            continue;
+        utf16beToAscii((const uint8_t *)(fBuffer + folderInfoOffsetFor(fid)), BARISTA_FOLDER_NAME_CHARS, name, sizeof(name));
+        if (strcasecmp(name, folderName) == 0)
+            return fid;
+    }
+
+    int newFid = 0;
+    for (int fid = 1; fid <= 60; fid++)
+    {
+        if (!folderExists[fid])
+        {
+            newFid = fid;
+            break;
+        }
+    }
+    if (newFid == 0)
+        return 0;
+
+    int freeSlot = -1;
+    for (int i = 0; i < MAX_ITEMS_COUNT; i++)
+    {
+        if (entryIsEmpty(fBuffer, i * 16))
+        {
+            freeSlot = i;
+            break;
+        }
+    }
+    if (freeSlot < 0)
+        return 0;
+
+    int off = freeSlot * 16;
+    memset(fBuffer + off, 0, 16);
+    uint32_t fidVal = (uint32_t)newFid;
+    memcpy(fBuffer + off + 4, &fidVal, sizeof(uint32_t));
+    fBuffer[off + 0x0b] = MENU_ITEM_FLDR;
+
+    int infoOff = folderInfoOffsetFor(newFid);
+    memset(fBuffer + infoOff, 0, BARISTA_FOLDER_INFO_SIZE);
+    asciiToUtf16be(folderName, (uint8_t *)(fBuffer + infoOff), BARISTA_FOLDER_NAME_CHARS);
+    fBuffer[infoOff + BARISTA_FOLDER_COLOR_OFFSET] = 0; // blue
+
+    folderExists[newFid] = true;
+    return newFid;
+}
+
+/* Finds a free slot within folder folderId's NAND or USB array. Returns the
+ * absolute byte offset into fBuffer, or -1 if that array is full. */
+static int findFreeFolderSlot(const char *fBuffer, int folderId, uint32_t type)
+{
+    int base = folderDataOffsetFor(folderId) + (type == MENU_ITEM_USB ? BARISTA_FOLDER_USB_OFFSET : 0);
+    for (int i = 0; i < BARISTA_FOLDER_ITEM_COUNT; i++)
+    {
+        int off = base + i * 16;
+        if (entryIsEmpty(fBuffer, off))
+            return off;
+    }
+    return -1;
+}
+
+/* Moves the entry at [dataSrcOff, dataSrcOff+16) into the given (existing)
+ * folder's next free slot of the same storage type, then clears the source
+ * slot(s). A USB-backed main-menu item has its actual data in the parallel
+ * USB array (dataSrcOff), while its NAND-array slot only holds a zero-id
+ * placeholder (nandPlaceholderOff) that must be cleared too; pass -1 for
+ * nandPlaceholderOff for a self-contained entry (a plain NAND item, or a
+ * vWii title, which isn't split across NAND/USB arrays at all). */
+static void moveEntryToFolder(char *fBuffer, int folderId, uint32_t type, int dataSrcOff, int nandPlaceholderOff)
+{
+    int dstOff = findFreeFolderSlot(fBuffer, folderId, type);
+    if (dstOff < 0)
+        return; // that folder is full - leave the entry where it is.
+
+    memcpy(fBuffer + dstOff, fBuffer + dataSrcOff, 16);
+    memset(fBuffer + dataSrcOff, 0, 16);
+    if (nandPlaceholderOff >= 0)
+        memset(fBuffer + nandPlaceholderOff, 0, 16);
+}
+
+/* Scans the main menu (only - not other folders) for vWii titles and known
+ * Virtual Console titles (per vc_platforms.psv) and relocates them into a
+ * "Wii"/"NES"/"SNES"/etc. folder, creating it if needed. Runs before the
+ * normal per-folder sort pass, so newly created/populated folders get
+ * alphabetized along with everything else afterwards. Titles in dontmove.txt,
+ * the CBHC title, and the Homebrew Launcher are left alone, same as sorting. */
+static void organizeIntoFolders(char *fBuffer, bool folderExists[61], uint32_t *dmItem, int dmTotal, uint32_t cbhcID, int usb_Connected)
+{
+    for (int i = 0; i < MAX_ITEMS_COUNT; i++)
+    {
+        int off = i * 16;
+        uint32_t id = 0, type = 0;
+        memcpy(&id, fBuffer + off + 4, sizeof(uint32_t));
+        memcpy(&type, fBuffer + off + 8, sizeof(uint32_t));
+        if (type == MENU_ITEM_FLDR && id > 0 && id <= 60)
+            folderExists[id] = true;
+    }
+
+    for (int i = 0; i < MAX_ITEMS_COUNT; i++)
+    {
+        int off = i * 16;
+        uint32_t idH = 0, id = 0, type = 0;
+        memcpy(&idH, fBuffer + off, sizeof(uint32_t));
+        memcpy(&id, fBuffer + off + 4, sizeof(uint32_t));
+        memcpy(&type, fBuffer + off + 8, sizeof(uint32_t));
+
+        if (type == MENU_ITEM_VWII)
+        {
+            int folderId = findOrCreateFolder(fBuffer, folderExists, "Wii");
+            if (folderId != 0)
+                moveEntryToFolder(fBuffer, folderId, MENU_ITEM_VWII, off, -1);
+            continue;
+        }
+
+        if (type != MENU_ITEM_NAND)
+            continue; // folders, disc, empty slots, etc. - not our concern here.
+
+        if ((idH != 0x00050000) && (idH != 0x00050002) && (idH != 0))
+            continue; // Settings, Mii Maker, etc.
+
+        int dataOff = off;
+        uint32_t realId = id;
+        uint32_t realType = MENU_ITEM_NAND;
+        int nandPlaceholderOff = -1;
+
+        if (id == 0)
+        {
+            if (!usb_Connected)
+                continue;
+            int usbOff = off + MAX_ITEMS_COUNT * 16;
+            uint32_t usbId = 0;
+            memcpy(&usbId, fBuffer + usbOff + 4, sizeof(uint32_t));
+            uint8_t usbType = (uint8_t)fBuffer[usbOff + 0x0b];
+            if (usbId == 0 || usbType != MENU_ITEM_USB)
+                continue; // genuinely empty slot
+            dataOff = usbOff;
+            realId = usbId;
+            realType = MENU_ITEM_USB;
+            nandPlaceholderOff = off;
+        }
+
+        if (realId == HBL_TITLE_ID || (cbhcID && realId == cbhcID))
+            continue;
+
+        bool dontMove = false;
+        for (int j = 0; j < dmTotal; j++)
+        {
+            if (realId == dmItem[j])
+            {
+                dontMove = true;
+                break;
+            }
+        }
+        if (dontMove)
+            continue;
+
+        const char *platformName = vcPlatformLookup(realId);
+        if (!platformName)
+            continue;
+
+        int folderId = findOrCreateFolder(fBuffer, folderExists, platformName);
+        if (folderId == 0)
+            continue;
+
+        moveEntryToFolder(fBuffer, folderId, realType, dataOff, nandPlaceholderOff);
+    }
+}
 
 static int smartStrcmp(const char *a, const char *b, const uint32_t a_id, const uint32_t b_id)
 {
@@ -255,11 +499,12 @@ int main(void)
     screenPrint("  +  - backup the current order (incl. folders)");
     screenPrint("  -  - restore the current order (incl. folders)");
     screenPrint("  L  - count items only (no changes)");
+    screenPrint("  R  - organize VC/Wii into folders, then standard sort");
 
     VPADStatus vpad;
     VPADReadError vpadError;
 
-    char modeText[25] = "";
+    char modeText[48] = "";
     char ignoreTheText[25] = "";
 
     while (WHBProcIsRunning())
@@ -325,13 +570,20 @@ int main(void)
             break;
         }
 
+        if (pressedBtns & VPAD_BUTTON_R)
+        {
+            organize = 1;
+            strcpy(modeText, "organize into folders + standard sorting");
+            break;
+        }
+
         if (pressedBtns & VPAD_BUTTON_HOME)
             goto prgEnd;
 
         OSSleepTicks(OSMillisecondsToTicks(1));
     }
 
-    char modeSelectedText[50] = "";
+    char modeSelectedText[96] = "";
     sprintf(modeSelectedText, "Starting %s%s...", modeText, ignoreTheText);
     screenPrint(modeSelectedText);
 
@@ -492,6 +744,9 @@ int main(void)
         }
     }
 
+    if (organize)
+        vcPlatformLoad(vcPlatformPath);
+
     // Read Menu Data
     struct MenuItemStruct menuItem[MAX_ITEMS_COUNT];
     bool folderExists[61] = {false};
@@ -522,6 +777,12 @@ int main(void)
         {
             strcpy(failError, "Memory not allocated for BaristaAccountSaveFile.dat\n");
             goto prgEnd;
+        }
+
+        if (organize)
+        {
+            organizeIntoFolders(fBuffer, folderExists, dmItem, dmTotal, cbhcID, usb_Connected);
+            vcPlatformFree();
         }
 
         // Main Menu - First pass - Get names. Only movable items are added.
