@@ -125,41 +125,6 @@ static int entryIsEmpty(const char *fBuffer, int offset)
     return idH == 0 && id == 0;
 }
 
-enum folderColors
-{
-    FOLDER_COLOR_BLUE = 0,
-    FOLDER_COLOR_GREEN = 1,
-    FOLDER_COLOR_YELLOW = 2,
-    FOLDER_COLOR_ORANGE = 3,
-    FOLDER_COLOR_RED = 4,
-    FOLDER_COLOR_PINK = 5,
-    FOLDER_COLOR_PURPLE = 6,
-    FOLDER_COLOR_GREY = 7
-};
-
-/* A color loosely themed to each console's own branding, so the folders
- * this mode creates are visually distinct from one another. */
-static uint8_t folderColorFor(const char *folderName)
-{
-    if (strcasecmp(folderName, "Wii") == 0)
-        return FOLDER_COLOR_BLUE;
-    if (strcasecmp(folderName, "NES") == 0)
-        return FOLDER_COLOR_RED;
-    if (strcasecmp(folderName, "SNES") == 0)
-        return FOLDER_COLOR_PURPLE;
-    if (strcasecmp(folderName, "N64") == 0)
-        return FOLDER_COLOR_GREEN;
-    if (strcasecmp(folderName, "GBA") == 0)
-        return FOLDER_COLOR_ORANGE;
-    if (strcasecmp(folderName, "DS") == 0)
-        return FOLDER_COLOR_PINK;
-    if (strcasecmp(folderName, "PC Engine") == 0)
-        return FOLDER_COLOR_YELLOW;
-    if (strcasecmp(folderName, "MSX") == 0)
-        return FOLDER_COLOR_GREY;
-    return FOLDER_COLOR_BLUE;
-}
-
 /* Finds a folder already named folderName (case-insensitive), or creates a
  * new one (a free folder id 1-60, a free main-menu slot for its icon, and
  * its info block) if none exists. Returns the folder id, or 0 if there's no
@@ -209,7 +174,7 @@ static int findOrCreateFolder(char *fBuffer, bool folderExists[61], const char *
     int infoOff = folderInfoOffsetFor(newFid);
     memset(fBuffer + infoOff, 0, BARISTA_FOLDER_INFO_SIZE);
     asciiToUtf16be(folderName, (uint8_t *)(fBuffer + infoOff), BARISTA_FOLDER_NAME_CHARS);
-    fBuffer[infoOff + BARISTA_FOLDER_COLOR_OFFSET] = (char)folderColorFor(folderName);
+    fBuffer[infoOff + BARISTA_FOLDER_COLOR_OFFSET] = 0; // blue
 
     folderExists[newFid] = true;
     return newFid;
