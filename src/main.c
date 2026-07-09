@@ -21,7 +21,8 @@
 #include "utils/file.h"
 #include "utils/xmltext.h"
 
-#define TITLE_TEXT "Sort Wii U Menu v1.2.0 (Aroma) - Yardape8000 & doino-gretchenliev - Aroma port: Yirr777"
+#define TITLE_TEXT "Sort Wii U Menu v1.2.0 (Aroma) - Yardape8000 & doino-gretchenliev"
+#define CREDIT_TEXT "Aroma port: Yirr777"
 #define HBL_TITLE_ID 0x13374842
 #define MAX_ITEMS_COUNT 300
 
@@ -246,6 +247,7 @@ int main(void)
     screenInit();
     screenPrint("------------------------------------------------------------");
     screenPrint(TITLE_TEXT);
+    screenPrint(CREDIT_TEXT);
     screenPrint("------------------------------------------------------------");
     screenPrint("Choose sorting method:");
     screenPrint("  B  - standard sorting");
