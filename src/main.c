@@ -548,6 +548,8 @@ int main(void)
                 folderOffset = 0x002D24 + ((fNum - 1) * (60 * 16 * 2 + 56));
             }
             int usbOffset = maxItemsCount * 16;
+            int diagNonEmpty = 0;
+            int diagVwii = 0;
             for (int i = 0; i < maxItemsCount; i++)
             {
                 moveableItem[i] = true;
@@ -557,11 +559,16 @@ int main(void)
                 memcpy(&id, fBuffer + itemOffset + 4, sizeof(uint32_t));
                 memcpy(&type, fBuffer + itemOffset + 8, sizeof(uint32_t));
 
+                if (count && fNum != 0 && !(id == 0 && type == 0))
+                    diagNonEmpty++;
+
                 if ((id == HBL_TITLE_ID)
                     || (cbhcID && (id == cbhcID))
                     || (type == MENU_ITEM_DISC)
                     || (type == MENU_ITEM_VWII))
                 {
+                    if (count && fNum != 0 && type == MENU_ITEM_VWII)
+                        diagVwii++;
                     moveableItem[i] = false;
                     itemsCount++;
                     continue;
@@ -570,6 +577,9 @@ int main(void)
                 {
                     if ((id > 0) && (id <= 60))
                         folderExists[id] = true;
+                    if (count)
+                        screenPrint("Folder icon: mainSlot=%d id=%u %s", i, id,
+                                    (id > 0 && id <= 60) ? "(recognized)" : "(OUT OF RANGE)");
                     moveableItem[i] = false;
                     continue;
                 }
@@ -628,6 +638,10 @@ int main(void)
                 }
             }
             movableItemsCount = currItemNum;
+
+            if (count && fNum != 0)
+                screenPrint("Folder %d: %d slot(s) used, %d vWii, %d named/sortable",
+                            fNum, diagNonEmpty, diagVwii, movableItemsCount);
 
             if (!count)
             {
