@@ -15,6 +15,7 @@
 void screenInit(void)
 {
     WHBLogConsoleInit();
+    WHBLogConsoleSetColor(0x102436FF); /* dark blue-grey instead of libwhb's default maroon */
 }
 
 void screenShutdown(void)

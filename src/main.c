@@ -244,15 +244,17 @@ int main(void)
     uint32_t userPersistentId = 0;
 
     screenInit();
+    screenPrint("------------------------------------------------------------");
     screenPrint(TITLE_TEXT);
+    screenPrint("------------------------------------------------------------");
     screenPrint("Choose sorting method:");
-    screenPrint("Press 'B' for standard sorting.");
-    screenPrint("Press 'A' for standard sorting(ignoring leading 'The').");
-    screenPrint("Press 'X' for bad naming mode sorting.");
-    screenPrint("Press 'Y' for bad naming mode sorting(ignoring leading 'The').");
-    screenPrint("Press '+' for backup of the current order(incl. folders).");
-    screenPrint("Press '-' for restore of the current order(incl. folders).");
-    screenPrint("Press 'L' for counting the items only(no changes).");
+    screenPrint("  B  - standard sorting");
+    screenPrint("  A  - standard sorting (ignoring leading 'The')");
+    screenPrint("  X  - bad naming mode sorting");
+    screenPrint("  Y  - bad naming mode sorting (ignoring leading 'The')");
+    screenPrint("  +  - backup the current order (incl. folders)");
+    screenPrint("  -  - restore the current order (incl. folders)");
+    screenPrint("  L  - count items only (no changes)");
 
     VPADStatus vpad;
     VPADReadError vpadError;
