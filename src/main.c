@@ -153,6 +153,7 @@ static const char *defaultExcludedHomebrewNames[] = {
     "hb app store",
     "nusspli",
     "wup installer gx2",
+    "menu sort",
 };
 
 static int isDefaultExcludedHomebrewName(const char *name)
