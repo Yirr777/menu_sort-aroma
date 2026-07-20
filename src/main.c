@@ -811,16 +811,6 @@ prgEnd:
         Mocha_DeInitLibrary();
     }
 
-    if (!failed && (restore || (!backup && !count)))
-    {
-        /* Plugins like "Homebrew On Wii U Menu" cache their own copy of this
-         * save file and only refresh it when the Wii U Menu process starts
-         * up fresh - simply returning to an already-running Wii U Menu can
-         * show a stale layout even though the real file was updated fine. */
-        screenPrint("If the menu looks unchanged, fully power off/on");
-        screenPrint("the console (not just Home) to refresh it.");
-    }
-
     /* Press HOME to bring up the system overlay and pick "Home Menu" to
      * exit, same as every other homebrew app - WHBProcIsRunning() reports
      * false once that's done. Forcing the transition ourselves via
