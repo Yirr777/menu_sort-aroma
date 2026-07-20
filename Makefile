@@ -13,7 +13,7 @@ TOPDIR ?= $(CURDIR)
 # APP_SHORTNAME sets the short name of the application
 # APP_AUTHOR sets the author of the application
 #-------------------------------------------------------------------------------
-APP_NAME	:= Menu Sort
+APP_NAME	:= Menu Sort Aroma
 APP_SHORTNAME	:= Menu Sort
 APP_AUTHOR	:= Yardape8000, doino-gretchenliev (Aroma port: Yirr777)
 

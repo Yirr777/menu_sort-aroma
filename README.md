@@ -1,4 +1,4 @@
-# Menu Sort (Aroma port)
+# Menu Sort Aroma
 
 Unofficial port of [Menu Sort](https://github.com/doino-gretchenliev/menu_sort) (originally by
 Yardape8000 and doino-gretchenliev) from the legacy Homebrew Launcher toolchain to the modern

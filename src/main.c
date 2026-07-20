@@ -21,7 +21,7 @@
 #include "utils/file.h"
 #include "utils/xmltext.h"
 
-#define TITLE_TEXT "Sort Wii U Menu v1.2.0 (Aroma) - Yardape8000 & doino-gretchenliev"
+#define TITLE_TEXT "Menu Sort Aroma v1.2.0 - Yardape8000 & doino-gretchenliev"
 #define CREDIT_TEXT "Aroma port: Yirr777"
 #define HBL_TITLE_ID 0x13374842
 #define MAX_ITEMS_COUNT 300
