@@ -1,5 +1,7 @@
 # Menu Sort Aroma
 
+<img src="assets/logo.png" alt="Menu Sort Aroma icon" width="128" height="128">
+
 Unofficial port of [Menu Sort](https://github.com/doino-gretchenliev/menu_sort) (originally by
 Yardape8000 and doino-gretchenliev) from the legacy Homebrew Launcher toolchain to the modern
 [Aroma](https://aroma.foryour.cafe/) environment, using [wut](https://github.com/devkitPro/wut) and
