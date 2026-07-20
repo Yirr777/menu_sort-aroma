@@ -13,7 +13,7 @@ including inside folders, and homebrew icons injected by the
 
 The following items will not move (though a folder's *contents* still get sorted): folders and
 system icons (Disc, Settings, etc), the Homebrew Launcher, any IDs listed in `dontmove.txt`, and any
-homebrew app whose name matches an entry in `homebrew_exclude.txt`.
+homebrew app whose name matches an entry in `dontmove_homebrew.txt`.
 
 **Warning**: always use the backup option (`+`) before sorting anything for the first time. Bricked
 consoles are not the author's (or this port's) responsibility.
@@ -50,7 +50,7 @@ Produces `menu_sort.wuhb`.
 
 ## Installing
 
-Copy `menu_sort.wuhb`, `dontmove.txt`, `titlesmap.psv` and `homebrew_exclude.txt` to
+Copy `menu_sort.wuhb`, `dontmove.txt`, `titlesmap.psv` and `dontmove_homebrew.txt` to
 `sd:/wiiu/apps/menu_sort/` on your SD card. Edit them as described below, then launch the app from
 the Aroma Homebrew Launcher.
 
@@ -86,7 +86,7 @@ Homebrew icons injected by the
 [Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin) don't have a
 fixed title ID the way installed titles do (it's a hash of wherever you happen to have installed
 them), so `dontmove.txt` can't target them reliably across different setups. Instead, edit
-`homebrew_exclude.txt` with one app name (or part of one) per line - any homebrew icon whose
+`dontmove_homebrew.txt` with one app name (or part of one) per line - any homebrew icon whose
 resolved name contains that text (case-insensitive) is left in place:
 
 ```

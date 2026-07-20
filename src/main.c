@@ -33,7 +33,7 @@ static const char *systemXmlPath = "storage_slc:/config/system.xml";
 static const char *dontmovePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove";
 static const char *gamemapPath = "fs:/vol/external01/wiiu/apps/menu_sort/titlesmap";
 static const char *backupPath = "fs:/vol/external01/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat";
-static const char *homebrewExcludePath = "fs:/vol/external01/wiiu/apps/menu_sort/homebrew_exclude.txt";
+static const char *homebrewExcludePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove_homebrew.txt";
 static const char *languages[] = {"JA", "EN", "FR", "DE", "IT", "ES", "ZHS", "KO", "NL", "PT", "RU", "ZHT"};
 static char languageText[14] = "longname_en";
 
@@ -144,7 +144,7 @@ static int readToBuffer(char **ptr, size_t *bufferSize, const char *path)
  * a fixed, guessable title id the way dontmove.txt entries do (their id is a
  * hash of wherever the user happens to have installed them), so utility
  * apps people generally want to keep put are excluded here by resolved name
- * instead - one per line in homebrew_exclude.txt, matched as a
+ * instead - one per line in dontmove_homebrew.txt, matched as a
  * case-insensitive substring to tolerate minor naming differences between
  * versions/forks. Editable by the user, same as dontmove.txt/titlesmap.psv;
  * no rebuild required to add or remove an entry. */
