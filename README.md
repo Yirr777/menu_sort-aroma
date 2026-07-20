@@ -7,14 +7,16 @@ Yardape8000 and doino-gretchenliev) from the legacy Homebrew Launcher toolchain 
 
 Ported and maintained by [Yirr777](https://github.com/Yirr777).
 
-With Wii U Menu Sorter you can alphabetically sort icons on the Wii U Menu, per user account.
+With Wii U Menu Sorter you can alphabetically sort icons on the Wii U Menu, per user account -
+including inside folders, and homebrew icons injected by the
+[Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin).
 
-The following items will not move: folders and system icons (Disc, Settings, etc), the Homebrew
-Launcher, and any IDs listed in `dontmove.txt`.
+The following items will not move (though a folder's *contents* still get sorted): folders and
+system icons (Disc, Settings, etc), the Homebrew Launcher, any IDs listed in `dontmove.txt`, and any
+homebrew app whose name matches an entry in `homebrew_exclude.txt`.
 
-**Warning**: this has not been tested on real hardware yet. Always use the backup option before
-sorting anything for the first time. Bricked consoles are not the author's (or this port's)
-responsibility.
+**Warning**: always use the backup option (`+`) before sorting anything for the first time. Bricked
+consoles are not the author's (or this port's) responsibility.
 
 ## What changed from the original
 
@@ -33,8 +35,9 @@ responsibility.
 ## Building
 
 Requires [devkitPro](https://devkitpro.org/wiki/Getting_Started) with the `wiiu-dev` package group,
-plus [libmocha](https://github.com/wiiu-env/libmocha) built from source and installed into
-`$DEVKITPRO/wut/usr` (`git clone` the repo, then `make install`).
+plus [libmocha](https://github.com/wiiu-env/libmocha) and
+[libwuhbutils](https://github.com/wiiu-env/libwuhbutils) built from source and installed
+(`git clone` each repo, then `make install` in it).
 
 ```
 export DEVKITPRO=/opt/devkitpro
@@ -47,9 +50,9 @@ Produces `menu_sort.wuhb`.
 
 ## Installing
 
-Copy `menu_sort.wuhb`, `dontmove.txt` and `titlesmap.psv` to `sd:/wiiu/apps/menu_sort/` on your SD
-card. Edit `dontmove.txt` / `titlesmap.psv` as described below, then launch the app from the Aroma
-Homebrew Launcher.
+Copy `menu_sort.wuhb`, `dontmove.txt`, `titlesmap.psv` and `homebrew_exclude.txt` to
+`sd:/wiiu/apps/menu_sort/` on your SD card. Edit them as described below, then launch the app from
+the Aroma Homebrew Launcher.
 
 ### Don't Move list
 
@@ -76,6 +79,25 @@ titleId#2|groupName
 ```
 
 `titlesmapX.psv` works the same way as `dontmoveX.txt` for per-profile overrides.
+
+### Homebrew exclude list
+
+Homebrew icons injected by the
+[Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin) don't have a
+fixed title ID the way installed titles do (it's a hash of wherever you happen to have installed
+them), so `dontmove.txt` can't target them reliably across different setups. Instead, edit
+`homebrew_exclude.txt` with one app name (or part of one) per line - any homebrew icon whose
+resolved name contains that text (case-insensitive) is left in place:
+
+```
+Aroma Updater
+Payload-Loader Installer
+NUSspli
+```
+
+Ships with a default list covering common utility apps (Aroma Updater, Payload-Loader Installer,
+Homebrew App Store, NUSspli, WUP Installer GX2, and Menu Sort itself) - add or remove lines as you
+like, no rebuild required.
 
 ## License
 

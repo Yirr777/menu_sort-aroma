@@ -33,6 +33,7 @@ static const char *systemXmlPath = "storage_slc:/config/system.xml";
 static const char *dontmovePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove";
 static const char *gamemapPath = "fs:/vol/external01/wiiu/apps/menu_sort/titlesmap";
 static const char *backupPath = "fs:/vol/external01/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat";
+static const char *homebrewExcludePath = "fs:/vol/external01/wiiu/apps/menu_sort/homebrew_exclude.txt";
 static const char *languages[] = {"JA", "EN", "FR", "DE", "IT", "ES", "ZHS", "KO", "NL", "PT", "RU", "ZHT"};
 static char languageText[14] = "longname_en";
 
@@ -143,28 +144,94 @@ static int readToBuffer(char **ptr, size_t *bufferSize, const char *path)
  * a fixed, guessable title id the way dontmove.txt entries do (their id is a
  * hash of wherever the user happens to have installed them), so utility
  * apps people generally want to keep put are excluded here by resolved name
- * instead, matched as a case-insensitive substring to tolerate minor naming
- * differences between versions/forks. */
-static const char *defaultExcludedHomebrewNames[] = {
-    "aroma updater",
-    "payload loader installer",
-    "payload-loader installer",
-    "homebrew app store",
-    "hb app store",
-    "nusspli",
-    "wup installer gx2",
-    "menu sort",
-};
+ * instead - one per line in homebrew_exclude.txt, matched as a
+ * case-insensitive substring to tolerate minor naming differences between
+ * versions/forks. Editable by the user, same as dontmove.txt/titlesmap.psv;
+ * no rebuild required to add or remove an entry. */
+static char **homebrewExcludeNames = NULL;
+static int homebrewExcludeCount = 0;
+
+static void loadHomebrewExcludeList(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    if (!fp)
+        return;
+
+    int lines = 0;
+    int ch;
+    do
+    {
+        ch = fgetc(fp);
+        if (ch == '\n')
+            lines++;
+    } while (ch != EOF);
+    rewind(fp);
+
+    if (lines <= 0)
+    {
+        fclose(fp);
+        return;
+    }
+
+    homebrewExcludeNames = malloc(sizeof(char *) * lines);
+    if (!homebrewExcludeNames)
+    {
+        fclose(fp);
+        return;
+    }
+
+    for (int i = 0; i < lines; i++)
+    {
+        char *line = NULL;
+        size_t len = 0;
+        if (getline(&line, &len, fp) < 0)
+        {
+            free(line);
+            break;
+        }
+
+        char *hash = strchr(line, '#');
+        if (hash)
+            *hash = 0;
+        size_t l = strlen(line);
+        while (l > 0 && (line[l - 1] == '\n' || line[l - 1] == '\r' || line[l - 1] == ' ' || line[l - 1] == '\t'))
+            line[--l] = 0;
+
+        if (l > 0)
+        {
+            homebrewExcludeNames[homebrewExcludeCount] = malloc(l + 1);
+            if (homebrewExcludeNames[homebrewExcludeCount])
+            {
+                memcpy(homebrewExcludeNames[homebrewExcludeCount], line, l + 1);
+                homebrewExcludeCount++;
+            }
+        }
+        free(line);
+    }
+
+    fclose(fp);
+}
+
+static void freeHomebrewExcludeList(void)
+{
+    for (int i = 0; i < homebrewExcludeCount; i++)
+        free(homebrewExcludeNames[i]);
+    free(homebrewExcludeNames);
+    homebrewExcludeNames = NULL;
+    homebrewExcludeCount = 0;
+}
 
 static int isDefaultExcludedHomebrewName(const char *name)
 {
-    for (size_t i = 0; i < sizeof(defaultExcludedHomebrewNames) / sizeof(defaultExcludedHomebrewNames[0]); i++)
+    size_t nameLen = strlen(name);
+    for (int i = 0; i < homebrewExcludeCount; i++)
     {
-        size_t needleLen = strlen(defaultExcludedHomebrewNames[i]);
-        size_t nameLen = strlen(name);
+        size_t needleLen = strlen(homebrewExcludeNames[i]);
+        if (needleLen == 0 || needleLen > nameLen)
+            continue;
         for (size_t pos = 0; pos + needleLen <= nameLen; pos++)
         {
-            if (strncasecmp(name + pos, defaultExcludedHomebrewNames[i], needleLen) == 0)
+            if (strncasecmp(name + pos, homebrewExcludeNames[i], needleLen) == 0)
                 return 1;
         }
     }
@@ -601,6 +668,7 @@ int main(void)
         }
 
         homebrewNamesScan();
+        loadHomebrewExcludeList(homebrewExcludePath);
 
         // Main Menu - First pass - Get names. Only movable items are added.
         for (int fNum = 0; fNum <= 60; fNum++)
@@ -817,6 +885,7 @@ int main(void)
         free(dmItem);
         dmItem = NULL;
         homebrewNamesFree();
+        freeHomebrewExcludeList();
     }
 
     screenPrint("done.");
