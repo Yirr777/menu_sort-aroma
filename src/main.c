@@ -20,6 +20,7 @@
 #include "utils/string.h"
 #include "utils/file.h"
 #include "utils/xmltext.h"
+#include "utils/homebrewnames.h"
 
 #define TITLE_TEXT "Menu Sort Aroma v1.2.0 - Yardape8000 & doino-gretchenliev"
 #define CREDIT_TEXT "Aroma port: Yirr777"
@@ -136,12 +137,27 @@ static int readToBuffer(char **ptr, size_t *bufferSize, const char *path)
     return 0;
 }
 
+#define UPPER_TITLE_ID_HOMEBREW 0x0005000fu
+
 static void getIDname(uint32_t id, uint32_t titleIDPrefix, char *name, size_t nameSize, uint32_t type)
 {
+    name[0] = 0;
+
+    if (titleIDPrefix == UPPER_TITLE_ID_HOMEBREW)
+    {
+        /* A synthetic id the "Homebrew On Wii U Menu" plugin injects for a
+         * homebrew app on the SD card - there's no real meta.xml to read
+         * for these, so resolve the name via the same sd:/wiiu/apps/ scan
+         * and path hash the plugin itself uses. */
+        const char *hn = homebrewNamesLookup(id);
+        if (hn)
+            strncpy(name, hn, nameSize - 1);
+        return;
+    }
+
     char *xBuffer = NULL;
     size_t xSize = 0;
     char path[255] = "";
-    name[0] = 0;
     sprintf(path, "storage_%s:/usr/title/%08x/%08x/meta/meta.xml", (type == MENU_ITEM_USB) ? "usb" : "mlc", titleIDPrefix, id);
     if (readToBuffer(&xBuffer, &xSize, path) == 0 && xBuffer != NULL)
     {
@@ -552,6 +568,8 @@ int main(void)
             screenPrint("Backed up current order first.");
         }
 
+        homebrewNamesScan();
+
         // Main Menu - First pass - Get names. Only movable items are added.
         for (int fNum = 0; fNum <= 60; fNum++)
         {
@@ -608,7 +626,7 @@ int main(void)
                     uint32_t idH = 0;
                     memcpy(&idH, fBuffer + itemOffset, sizeof(uint32_t));
 
-                    if ((idH != 0x00050000) && (idH != 0x00050002) && (idH != 0))
+                    if ((idH != 0x00050000) && (idH != 0x00050002) && (idH != 0) && (idH != UPPER_TITLE_ID_HOMEBREW))
                     {
                         moveableItem[i] = false;
                         continue;
@@ -760,6 +778,7 @@ int main(void)
         fBuffer = NULL;
         free(dmItem);
         dmItem = NULL;
+        homebrewNamesFree();
     }
 
     screenPrint("done.");

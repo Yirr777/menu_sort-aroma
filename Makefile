@@ -53,13 +53,13 @@ CXXFLAGS	:=	-g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -O2 -ffunction-s
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lmocha -lwut
+LIBS	:= -lmocha -lwuhbutils -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
 # containing include and lib
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr
+LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr $(DEVKITPRO)/wums
 
 #-------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
