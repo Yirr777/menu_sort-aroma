@@ -205,29 +205,30 @@ static int getConsoleSerialId(char *out, size_t outSize)
     return ok;
 }
 
-static void deleteStaleHomebrewOnMenuPluginCache(uint32_t userPersistentId)
+/* The "Homebrew On Wii U Menu" plugin redirects the Wii U Menu's *entire*
+ * save I/O (both reads and writes) to this SD-card copy while it's active -
+ * every folder/icon edit made through the Wii U Menu itself lands here, not
+ * in the real save on MLC at all. If we sort the real file instead, we're
+ * working from stale data and, worse, deleting the plugin's cache afterward
+ * (the previous approach) makes it re-copy from that stale real file next
+ * boot - discarding whatever the user organized through the menu since.
+ * Whenever this cache exists, it - not the real MLC path - is the correct
+ * file to read, sort, and write back to. */
+static int getHomebrewOnMenuPluginCachePath(char *out, size_t outSize, uint32_t userPersistentId)
 {
     char serialId[32];
     if (!getConsoleSerialId(serialId, sizeof(serialId)) || serialId[0] == 0)
-        return;
+        return 0;
 
-    char cachePath[192];
-    snprintf(cachePath, sizeof(cachePath),
+    snprintf(out, outSize,
              "fs:/vol/external01/wiiu/homebrew_on_menu_plugin/%s/save/%08x/BaristaAccountSaveFile.dat",
              serialId, 0x80000000u | userPersistentId);
 
-    FILE *fp = fopen(cachePath, "rb");
+    FILE *fp = fopen(out, "rb");
     if (!fp)
-        return; // Plugin cache doesn't exist (or plugin isn't used) - nothing to do.
+        return 0; // Plugin cache doesn't exist (or plugin isn't used).
     fclose(fp);
-
-    /* Delete rather than overwrite: the plugin recreates it by copying from
-     * the real save file (which we've already fixed) the next time it
-     * initializes, so this is just as correct without depending on our own
-     * path derivation staying byte-for-byte identical to a future version
-     * of the plugin's - a stale cache we fail to delete is a no-op, not a
-     * wrong write. */
-    remove(cachePath);
+    return 1;
 }
 
 int main(void)
@@ -506,9 +507,16 @@ int main(void)
      * different grid position as a side effect of empty gaps elsewhere
      * getting compacted away. */
     bool wasCollected[MAX_ITEMS_COUNT];
-    char baristaPath[255] = "";
     folderExists[0] = true;
-    sprintf(baristaPath, "storage_mlc:/usr/save/00050010/%08x/user/%08x/BaristaAccountSaveFile.dat", sysmenuId, (unsigned int)userPersistentId);
+    char mlcBaristaPath[255] = "";
+    sprintf(mlcBaristaPath, "storage_mlc:/usr/save/00050010/%08x/user/%08x/BaristaAccountSaveFile.dat", sysmenuId, (unsigned int)userPersistentId);
+
+    char baristaPath[255] = "";
+    int usingPluginCache = getHomebrewOnMenuPluginCachePath(baristaPath, sizeof(baristaPath), userPersistentId);
+    if (!usingPluginCache)
+        strcpy(baristaPath, mlcBaristaPath);
+    else
+        screenPrint("Using Homebrew On Menu plugin's save copy.");
 
     int itemsCount = 0;
 
@@ -519,7 +527,8 @@ int main(void)
     else if (restore)
     {
         fcopy(backupPath, baristaPath);
-        deleteStaleHomebrewOnMenuPluginCache(userPersistentId);
+        if (usingPluginCache)
+            fcopy(baristaPath, mlcBaristaPath);
     }
     else
     {
@@ -710,7 +719,8 @@ int main(void)
             {
                 fwrite(fBuffer, 1, fSize, fp);
                 fclose(fp);
-                deleteStaleHomebrewOnMenuPluginCache(userPersistentId);
+                if (usingPluginCache)
+                    fcopy(baristaPath, mlcBaristaPath);
             }
             else
             {
