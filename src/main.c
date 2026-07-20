@@ -668,46 +668,73 @@ int main(void)
             {
                 qsort(menuItem, movableItemsCount, sizeof(struct MenuItemStruct), fSortCond);
 
+                /* Compact within each contiguous run of movable slots (a
+                 * "segment" bounded by fixed items - folders, dontmove.txt
+                 * entries, etc. - or the array edges), instead of either
+                 * compacting globally (aroma24 and earlier: hides gaps, but
+                 * can shift a segment's fixed neighbor to a different visual
+                 * position) or not compacting at all (aroma25/26: keeps
+                 * every fixed item's position exact, but leaves whatever
+                 * gaps already existed scattered where they were). Consuming
+                 * the globally-sorted list in segment order left-to-right
+                 * still yields correct overall alphabetical order, since
+                 * each segment gets exactly the next slice of it. */
                 currItemNum = 0;
-                for (int i = 0; i < maxItemsCount; i++)
+                int i = 0;
+                while (i < maxItemsCount)
                 {
-                    /* Only rewrite slots that actually held a sortable title
-                     * (wasCollected) - a movable-but-empty slot is left
-                     * completely untouched instead of being compacted away,
-                     * so fixed items like folders don't visually drift when
-                     * gaps elsewhere shift around them. Since wasCollected
-                     * is set exactly movableItemsCount times, currItemNum
-                     * never reaches movableItemsCount before this loop ends. */
-                    if (!moveableItem[i] || !wasCollected[i])
+                    if (!moveableItem[i])
+                    {
+                        i++;
                         continue;
-                    int itemOffset = i * 16 + folderOffset;
-                    uint32_t idNAND = 0;
-                    uint32_t idNANDh = 0;
-                    uint32_t idUSB = 0;
-                    uint32_t idUSBh = 0;
-                    if (menuItem[currItemNum].type == MENU_ITEM_NAND)
-                    {
-                        idNAND = menuItem[currItemNum].ID;
-                        idNANDh = menuItem[currItemNum].titleIDPrefix;
                     }
-                    else
+
+                    int segStart = i;
+                    int segEnd = i;
+                    while (segEnd < maxItemsCount && moveableItem[segEnd])
+                        segEnd++;
+
+                    int segRealCount = 0;
+                    for (int k = segStart; k < segEnd; k++)
+                        if (wasCollected[k])
+                            segRealCount++;
+
+                    for (int k = segStart; k < segEnd; k++)
                     {
-                        idUSB = menuItem[currItemNum].ID;
-                        idUSBh = menuItem[currItemNum].titleIDPrefix;
+                        int itemOffset = k * 16 + folderOffset;
+                        uint32_t idNAND = 0;
+                        uint32_t idNANDh = 0;
+                        uint32_t idUSB = 0;
+                        uint32_t idUSBh = 0;
+                        if (k - segStart < segRealCount)
+                        {
+                            if (menuItem[currItemNum].type == MENU_ITEM_NAND)
+                            {
+                                idNAND = menuItem[currItemNum].ID;
+                                idNANDh = menuItem[currItemNum].titleIDPrefix;
+                            }
+                            else
+                            {
+                                idUSB = menuItem[currItemNum].ID;
+                                idUSBh = menuItem[currItemNum].titleIDPrefix;
+                            }
+                            currItemNum++;
+                        }
+
+                        memcpy(fBuffer + itemOffset, &idNANDh, sizeof(uint32_t));
+                        memcpy(fBuffer + itemOffset + 4, &idNAND, sizeof(uint32_t));
+                        memset(fBuffer + itemOffset + 8, 0, 8);
+                        fBuffer[itemOffset + 0x0b] = 1;
+
+                        int usbItemOffset = itemOffset + usbOffset;
+
+                        memcpy(fBuffer + usbItemOffset, &idUSBh, sizeof(uint32_t));
+                        memcpy(fBuffer + usbItemOffset + 4, &idUSB, sizeof(uint32_t));
+                        memset(fBuffer + usbItemOffset + 8, 0, 8);
+                        fBuffer[usbItemOffset + 0x0b] = 2;
                     }
-                    currItemNum++;
 
-                    memcpy(fBuffer + itemOffset, &idNANDh, sizeof(uint32_t));
-                    memcpy(fBuffer + itemOffset + 4, &idNAND, sizeof(uint32_t));
-                    memset(fBuffer + itemOffset + 8, 0, 8);
-                    fBuffer[itemOffset + 0x0b] = 1;
-
-                    itemOffset += usbOffset;
-
-                    memcpy(fBuffer + itemOffset, &idUSBh, sizeof(uint32_t));
-                    memcpy(fBuffer + itemOffset + 4, &idUSB, sizeof(uint32_t));
-                    memset(fBuffer + itemOffset + 8, 0, 8);
-                    fBuffer[itemOffset + 0x0b] = 2;
+                    i = segEnd;
                 }
             }
         }
