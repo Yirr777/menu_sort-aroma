@@ -148,6 +148,7 @@ static int readToBuffer(char **ptr, size_t *bufferSize, const char *path)
 static const char *defaultExcludedHomebrewNames[] = {
     "aroma updater",
     "payload loader installer",
+    "payload-loader installer",
     "homebrew app store",
     "hb app store",
     "nusspli",
