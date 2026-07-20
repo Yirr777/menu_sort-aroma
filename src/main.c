@@ -139,6 +139,36 @@ static int readToBuffer(char **ptr, size_t *bufferSize, const char *path)
 
 #define UPPER_TITLE_ID_HOMEBREW 0x0005000fu
 
+/* Homebrew icons injected by the "Homebrew On Wii U Menu" plugin don't have
+ * a fixed, guessable title id the way dontmove.txt entries do (their id is a
+ * hash of wherever the user happens to have installed them), so utility
+ * apps people generally want to keep put are excluded here by resolved name
+ * instead, matched as a case-insensitive substring to tolerate minor naming
+ * differences between versions/forks. */
+static const char *defaultExcludedHomebrewNames[] = {
+    "aroma updater",
+    "payload loader installer",
+    "homebrew app store",
+    "hb app store",
+    "nusspli",
+    "wup installer gx2",
+};
+
+static int isDefaultExcludedHomebrewName(const char *name)
+{
+    for (size_t i = 0; i < sizeof(defaultExcludedHomebrewNames) / sizeof(defaultExcludedHomebrewNames[0]); i++)
+    {
+        size_t needleLen = strlen(defaultExcludedHomebrewNames[i]);
+        size_t nameLen = strlen(name);
+        for (size_t pos = 0; pos + needleLen <= nameLen; pos++)
+        {
+            if (strncasecmp(name + pos, defaultExcludedHomebrewNames[i], needleLen) == 0)
+                return 1;
+        }
+    }
+    return 0;
+}
+
 static void getIDname(uint32_t id, uint32_t titleIDPrefix, char *name, size_t nameSize, uint32_t type)
 {
     name[0] = 0;
@@ -667,6 +697,12 @@ int main(void)
                          * which varies by install method and isn't covered by
                          * HBL_TITLE_ID) - leave it in place rather than
                          * sorting an unnamed entry to one end of the list. */
+                        moveableItem[i] = false;
+                        continue;
+                    }
+                    if (menuItem[currItemNum].titleIDPrefix == UPPER_TITLE_ID_HOMEBREW
+                        && isDefaultExcludedHomebrewName(menuItem[currItemNum].name))
+                    {
                         moveableItem[i] = false;
                         continue;
                     }
