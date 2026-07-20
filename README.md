@@ -20,6 +20,33 @@ homebrew app whose name matches an entry in `dontmove_homebrew.txt`.
 **Warning**: always use the backup option (`+`) before sorting anything for the first time. Bricked
 consoles are not the author's (or this port's) responsibility.
 
+## Controls
+
+| Button | Action |
+| --- | --- |
+| `B` | Standard sorting |
+| `A` | Standard sorting, ignoring a leading "The" |
+| `X` | Bad naming mode sorting |
+| `Y` | Bad naming mode sorting, ignoring a leading "The" |
+| `+` | Backup the current order (including folders) |
+| `-` | Restore the last backup (including folders) |
+| `L` | Count items only, no changes |
+| `HOME` | Exit without doing anything |
+
+## Backups
+
+Whenever an actual sort runs (any of `B`/`A`/`X`/`Y` — not `L`), Menu Sort automatically backs up the
+current, unmodified order to `sd:/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat` before touching
+anything, whether or not you also pressed `+` first. Press `-` at any time to restore that backup.
+
+## Homebrew On Wii U Menu plugin compatibility
+
+If the [Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin) is
+installed, it redirects the Wii U Menu's save data to its own copy on the SD card so it can inject
+homebrew icons without touching the real system save. Menu Sort detects this and reads/writes that
+same SD-card copy instead of the raw system save file, then mirrors the result back to the system
+save - so both stay in sync and you never lose folders or icons the plugin hasn't flushed yet.
+
 ## What changed from the original
 
 - `dynamic_libs` (runtime function-pointer loading) → native [wut](https://github.com/devkitPro/wut)
@@ -33,6 +60,11 @@ consoles are not the author's (or this port's) responsibility.
 - `nn_act_*` → `src/act_wrapper.cpp`, a tiny `extern "C"` shim, since wut only exposes `nn::act` in C++.
 - Output on both the TV and GamePad screens (the original only wrote to the GamePad).
 - Builds to a `.wuhb` (Aroma Homebrew Launcher) instead of a legacy `.elf`.
+- Automatic backup before every real sort, in addition to the original's manual `+` backup.
+- Homebrew icons injected by the
+  [Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin) - which didn't
+  exist when the original was written - are now sorted too, with their own exclude list
+  (`dontmove_homebrew.txt`) and compatibility with the plugin's SD-card save redirection.
 
 ## Building
 
