@@ -498,6 +498,14 @@ int main(void)
     struct MenuItemStruct menuItem[MAX_ITEMS_COUNT];
     bool folderExists[61] = {false};
     bool moveableItem[MAX_ITEMS_COUNT];
+    /* True only for slots that actually held a sortable title, as opposed to
+     * slots that are movable but simply empty (never assigned a title).
+     * Rewriting only wasCollected slots - instead of every movable slot -
+     * keeps the occupied/empty pattern around fixed items (folders,
+     * dontmove.txt entries, etc.) intact, so they don't visually drift to a
+     * different grid position as a side effect of empty gaps elsewhere
+     * getting compacted away. */
+    bool wasCollected[MAX_ITEMS_COUNT];
     char baristaPath[255] = "";
     folderExists[0] = true;
     sprintf(baristaPath, "storage_mlc:/usr/save/00050010/%08x/user/%08x/BaristaAccountSaveFile.dat", sysmenuId, (unsigned int)userPersistentId);
@@ -555,6 +563,7 @@ int main(void)
             for (int i = 0; i < maxItemsCount; i++)
             {
                 moveableItem[i] = true;
+                wasCollected[i] = false;
                 int itemOffset = i * 16 + folderOffset;
                 uint32_t id = 0;
                 uint32_t type = 0;
@@ -636,6 +645,7 @@ int main(void)
                     }
                     menuItem[currItemNum].ID = id;
                     menuItem[currItemNum].type = type;
+                    wasCollected[i] = true;
                     currItemNum++;
                 }
             }
@@ -652,27 +662,31 @@ int main(void)
                 currItemNum = 0;
                 for (int i = 0; i < maxItemsCount; i++)
                 {
-                    if (!moveableItem[i])
+                    /* Only rewrite slots that actually held a sortable title
+                     * (wasCollected) - a movable-but-empty slot is left
+                     * completely untouched instead of being compacted away,
+                     * so fixed items like folders don't visually drift when
+                     * gaps elsewhere shift around them. Since wasCollected
+                     * is set exactly movableItemsCount times, currItemNum
+                     * never reaches movableItemsCount before this loop ends. */
+                    if (!moveableItem[i] || !wasCollected[i])
                         continue;
                     int itemOffset = i * 16 + folderOffset;
                     uint32_t idNAND = 0;
                     uint32_t idNANDh = 0;
                     uint32_t idUSB = 0;
                     uint32_t idUSBh = 0;
-                    if (currItemNum < movableItemsCount)
+                    if (menuItem[currItemNum].type == MENU_ITEM_NAND)
                     {
-                        if (menuItem[currItemNum].type == MENU_ITEM_NAND)
-                        {
-                            idNAND = menuItem[currItemNum].ID;
-                            idNANDh = menuItem[currItemNum].titleIDPrefix;
-                        }
-                        else
-                        {
-                            idUSB = menuItem[currItemNum].ID;
-                            idUSBh = menuItem[currItemNum].titleIDPrefix;
-                        }
-                        currItemNum++;
+                        idNAND = menuItem[currItemNum].ID;
+                        idNANDh = menuItem[currItemNum].titleIDPrefix;
                     }
+                    else
+                    {
+                        idUSB = menuItem[currItemNum].ID;
+                        idUSBh = menuItem[currItemNum].titleIDPrefix;
+                    }
+                    currItemNum++;
 
                     memcpy(fBuffer + itemOffset, &idNANDh, sizeof(uint32_t));
                     memcpy(fBuffer + itemOffset + 4, &idNAND, sizeof(uint32_t));
