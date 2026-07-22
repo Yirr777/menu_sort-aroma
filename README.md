@@ -129,9 +129,7 @@ Payload-Loader Installer
 NUSspli
 ```
 
-Ships with a default list covering common utility apps (Aroma Updater, Payload-Loader Installer,
-Homebrew App Store, NUSspli, Koopair, and Menu Sort itself) - add or remove lines as you like, no
-rebuild required.
+Ships empty - add whichever homebrew apps you want left in place, one per line, no rebuild required.
 
 ## License
 

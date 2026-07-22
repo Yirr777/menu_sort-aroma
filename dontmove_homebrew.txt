@@ -2,11 +2,3 @@
 # homebrew icon whose resolved name contains this text (case-insensitive)
 # in its current spot instead of sorting it. Add/remove lines as you like.
 # Lines starting with # are ignored.
-Aroma Updater
-Payload Loader Installer
-Payload-Loader Installer
-Homebrew App Store
-HB App Store
-NUSspli
-Koopair
-Menu Sort Aroma
