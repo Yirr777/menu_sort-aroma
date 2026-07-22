@@ -129,7 +129,8 @@ Payload-Loader Installer
 NUSspli
 ```
 
-Ships empty - add whichever homebrew apps you want left in place, one per line, no rebuild required.
+Ships with only Menu Sort itself excluded by default - add whichever other homebrew apps you want
+left in place, one per line, no rebuild required.
 
 ## License
 
