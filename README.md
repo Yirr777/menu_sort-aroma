@@ -130,8 +130,8 @@ NUSspli
 ```
 
 Ships with a default list covering common utility apps (Aroma Updater, Payload-Loader Installer,
-Homebrew App Store, NUSspli, WUP Installer GX2, and Menu Sort itself) - add or remove lines as you
-like, no rebuild required.
+Homebrew App Store, NUSspli, Koopair, and Menu Sort itself) - add or remove lines as you like, no
+rebuild required.
 
 ## License
 

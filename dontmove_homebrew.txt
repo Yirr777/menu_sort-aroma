@@ -8,5 +8,5 @@ Payload-Loader Installer
 Homebrew App Store
 HB App Store
 NUSspli
-WUP Installer GX2
+Koopair
 Menu Sort
