@@ -1,3 +1,8 @@
-10179B00 # Brain Age: Train Your Brain In Minutes A Day
-10105A00 # Netflix
-10105700 # YouTube
+# One title ID per line (the last 4 bytes, in hex) - Menu Sort will leave any
+# icon whose ID matches in its current spot instead of sorting it. Add/remove
+# lines as you like. Lines starting with # are ignored.
+#
+# You can also use dontmoveX.txt (X: 0-9, A, or B) for per-user-profile
+# lists - X is the last digit of the console's 8000000X save folder for that
+# user (shown by the app as "User ID: X"). dontmoveX.txt takes priority over
+# this file; only one is used per profile.
