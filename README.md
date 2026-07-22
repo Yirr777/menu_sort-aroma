@@ -84,6 +84,10 @@ Produces `menu_sort_aroma.wuhb`.
 
 ## Installing
 
+Don't want to build it yourself? Grab the SD card zip from the
+[latest release](https://github.com/Yirr777/menu_sort-aroma/releases/latest) and extract it to the
+root of your SD card - it already contains everything below, laid out correctly.
+
 Copy `menu_sort_aroma.wuhb`, `dontmove.txt`, `titlesmap.psv` and `dontmove_homebrew.txt` to
 `sd:/wiiu/apps/menu_sort_aroma/` on your SD card. Edit them as described below, then launch the app
 from the Aroma Homebrew Launcher.
