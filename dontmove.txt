@@ -1,4 +1,4 @@
-# One title ID per line (the last 4 bytes, in hex) - Menu Sort will leave any
+# One title ID per line (the last 4 bytes, in hex) - Menu Sort Aroma will leave any
 # icon whose ID matches in its current spot instead of sorting it. Add/remove
 # lines as you like. Lines starting with # are ignored.
 #

@@ -14,7 +14,7 @@ TOPDIR ?= $(CURDIR)
 # APP_AUTHOR sets the author of the application
 #-------------------------------------------------------------------------------
 APP_NAME	:= Menu Sort Aroma
-APP_SHORTNAME	:= Menu Sort
+APP_SHORTNAME	:= Menu Sort Aroma
 APP_AUTHOR	:= Yardape8000, doino-gretchenliev (Aroma port: Yirr777)
 
 include $(DEVKITPRO)/wut/share/wut_rules

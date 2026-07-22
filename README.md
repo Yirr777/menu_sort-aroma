@@ -9,7 +9,7 @@ Yardape8000 and doino-gretchenliev) from the legacy Homebrew Launcher toolchain 
 
 Ported and maintained by [Yirr777](https://github.com/Yirr777).
 
-With Wii U Menu Sorter you can alphabetically sort icons on the Wii U Menu, per user account -
+With Menu Sort Aroma you can alphabetically sort icons on the Wii U Menu, per user account -
 including inside folders, and homebrew icons injected by the
 [Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin).
 
@@ -35,7 +35,7 @@ consoles are not the author's (or this port's) responsibility.
 
 ## Backups
 
-Whenever an actual sort runs (any of `B`/`A`/`X`/`Y` — not `L`), Menu Sort automatically backs up the
+Whenever an actual sort runs (any of `B`/`A`/`X`/`Y` — not `L`), Menu Sort Aroma automatically backs up the
 current, unmodified order to `sd:/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat` before touching
 anything, whether or not you also pressed `+` first. Press `-` at any time to restore that backup.
 
@@ -43,7 +43,7 @@ anything, whether or not you also pressed `+` first. Press `-` at any time to re
 
 If the [Homebrew On Wii U Menu plugin](https://github.com/wiiu-env/homebrew_on_menu_plugin) is
 installed, it redirects the Wii U Menu's save data to its own copy on the SD card so it can inject
-homebrew icons without touching the real system save. Menu Sort detects this and reads/writes that
+homebrew icons without touching the real system save. Menu Sort Aroma detects this and reads/writes that
 same SD-card copy instead of the raw system save file, then mirrors the result back to the system
 save - so both stay in sync and you never lose folders or icons the plugin hasn't flushed yet.
 
@@ -129,7 +129,7 @@ Payload-Loader Installer
 NUSspli
 ```
 
-Ships with only Menu Sort itself excluded by default - add whichever other homebrew apps you want
+Ships with only Menu Sort Aroma itself excluded by default - add whichever other homebrew apps you want
 left in place, one per line, no rebuild required.
 
 ## License
