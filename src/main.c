@@ -30,10 +30,10 @@
 static const char *cafeXmlPath = "storage_slc:/proc/prefs/cafe.xml";
 static const char *syshaxXmlPath = "storage_slc:/config/syshax.xml";
 static const char *systemXmlPath = "storage_slc:/config/system.xml";
-static const char *dontmovePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove";
-static const char *gamemapPath = "fs:/vol/external01/wiiu/apps/menu_sort/titlesmap";
-static const char *backupPath = "fs:/vol/external01/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat";
-static const char *homebrewExcludePath = "fs:/vol/external01/wiiu/apps/menu_sort/dontmove_homebrew.txt";
+static const char *dontmovePath = "fs:/vol/external01/wiiu/apps/menu_sort_aroma/dontmove";
+static const char *gamemapPath = "fs:/vol/external01/wiiu/apps/menu_sort_aroma/titlesmap";
+static const char *backupPath = "fs:/vol/external01/wiiu/apps/menu_sort_aroma/BaristaAccountSaveFile.dat";
+static const char *homebrewExcludePath = "fs:/vol/external01/wiiu/apps/menu_sort_aroma/dontmove_homebrew.txt";
 static const char *languages[] = {"JA", "EN", "FR", "DE", "IT", "ES", "ZHS", "KO", "NL", "PT", "RU", "ZHT"};
 static char languageText[14] = "longname_en";
 

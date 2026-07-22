@@ -23,7 +23,7 @@ static int wuhbUtilsReady = 0;
 
 /* Matches homebrew_on_menu_plugin's hash_string(): unsigned 32-bit,
  * h = 37*h + byte, over the path relative to the SD card root (e.g.
- * "wiiu/apps/menu_sort/menu_sort.wuhb"), no modulo applied. */
+ * "wiiu/apps/menu_sort_aroma/menu_sort_aroma.wuhb"), no modulo applied. */
 static uint32_t hashPath(const char *s)
 {
     uint32_t h = 0;

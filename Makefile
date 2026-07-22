@@ -28,7 +28,7 @@ include $(DEVKITPRO)/wut/share/wut_rules
 # CONTENT is the path to the bundled folder that will be mounted as /vol/content/
 # ICON is the game icon, leave blank to use default rule
 #-------------------------------------------------------------------------------
-TARGET		:=	menu_sort
+TARGET		:=	menu_sort_aroma
 BUILD		:=	build
 SOURCES		:=	src \
 			src/utils

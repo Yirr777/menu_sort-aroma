@@ -36,7 +36,7 @@ consoles are not the author's (or this port's) responsibility.
 ## Backups
 
 Whenever an actual sort runs (any of `B`/`A`/`X`/`Y` — not `L`), Menu Sort Aroma automatically backs up the
-current, unmodified order to `sd:/wiiu/apps/menu_sort/BaristaAccountSaveFile.dat` before touching
+current, unmodified order to `sd:/wiiu/apps/menu_sort_aroma/BaristaAccountSaveFile.dat` before touching
 anything, whether or not you also pressed `+` first. Press `-` at any time to restore that backup.
 
 ## Homebrew On Wii U Menu plugin compatibility
@@ -80,13 +80,18 @@ export PATH="$DEVKITPPC/bin:$DEVKITPRO/tools/bin:$PATH"
 make
 ```
 
-Produces `menu_sort.wuhb`.
+Produces `menu_sort_aroma.wuhb`.
 
 ## Installing
 
-Copy `menu_sort.wuhb`, `dontmove.txt`, `titlesmap.psv` and `dontmove_homebrew.txt` to
-`sd:/wiiu/apps/menu_sort/` on your SD card. Edit them as described below, then launch the app from
-the Aroma Homebrew Launcher.
+Copy `menu_sort_aroma.wuhb`, `dontmove.txt`, `titlesmap.psv` and `dontmove_homebrew.txt` to
+`sd:/wiiu/apps/menu_sort_aroma/` on your SD card. Edit them as described below, then launch the app
+from the Aroma Homebrew Launcher.
+
+**Upgrading from an older version installed under `sd:/wiiu/apps/menu_sort/`?** Move that whole
+folder to `sd:/wiiu/apps/menu_sort_aroma/` (keeping your customized `dontmove.txt` /
+`titlesmap.psv` / `dontmove_homebrew.txt`), then delete the old empty `menu_sort` folder. The
+Homebrew Launcher will list it as a new entry either way.
 
 ### Don't Move list
 
