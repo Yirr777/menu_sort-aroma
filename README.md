@@ -143,5 +143,6 @@ left in place, one per line, no rebuild required.
 
 ## License
 
-Mixed, per the original project. See the [original repository](https://github.com/doino-gretchenliev/menu_sort)
-for details.
+This port is released into the public domain under [The Unlicense](LICENSE) - do whatever you want
+with it. The [original project](https://github.com/doino-gretchenliev/menu_sort) it's based on
+doesn't declare a license of its own.
