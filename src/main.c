@@ -611,9 +611,14 @@ int main(void)
     }
 
     // Read Menu Data
-    struct MenuItemStruct menuItem[MAX_ITEMS_COUNT];
+    /* These three arrays are sized by MAX_ITEMS_COUNT (810, to support the
+     * 300-title-limit bypass). At ~80 bytes per MenuItemStruct that is ~66 KB,
+     * too large to sit safely on the thread stack, so they are static. This is
+     * safe: this routine is not reentrant, and every slot is explicitly
+     * (re)initialized by the loops below before it is read. */
+    static struct MenuItemStruct menuItem[MAX_ITEMS_COUNT];
     bool folderExists[61] = {false};
-    bool moveableItem[MAX_ITEMS_COUNT];
+    static bool moveableItem[MAX_ITEMS_COUNT];
     /* True only for slots that actually held a sortable title, as opposed to
      * slots that are movable but simply empty (never assigned a title).
      * Rewriting only wasCollected slots - instead of every movable slot -
@@ -621,7 +626,7 @@ int main(void)
      * dontmove.txt entries, etc.) intact, so they don't visually drift to a
      * different grid position as a side effect of empty gaps elsewhere
      * getting compacted away. */
-    bool wasCollected[MAX_ITEMS_COUNT];
+    static bool wasCollected[MAX_ITEMS_COUNT];
     folderExists[0] = true;
     char mlcBaristaPath[255] = "";
     sprintf(mlcBaristaPath, "storage_mlc:/usr/save/00050010/%08x/user/%08x/BaristaAccountSaveFile.dat", sysmenuId, (unsigned int)userPersistentId);
