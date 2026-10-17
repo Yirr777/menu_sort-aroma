@@ -25,7 +25,7 @@
 #define TITLE_TEXT "Menu Sort Aroma v1.3.0 - Yardape8000 & doino-gretchenliev"
 #define CREDIT_TEXT "Ported and maintained by Yirr777"
 #define HBL_TITLE_ID 0x13374842
-#define MAX_ITEMS_COUNT 300
+#define MAX_ITEMS_COUNT 810
 
 static const char *cafeXmlPath = "storage_slc:/proc/prefs/cafe.xml";
 static const char *syshaxXmlPath = "storage_slc:/config/syshax.xml";
