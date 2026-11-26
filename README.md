@@ -47,6 +47,19 @@ homebrew icons without touching the real system save. Menu Sort Aroma detects th
 same SD-card copy instead of the raw system save file, then mirrors the result back to the system
 save - so both stay in sync and you never lose folders or icons the plugin hasn't flushed yet.
 
+## WiiU-300-Limit-Circumvention compatibility
+
+The [WiiU-300-Limit-Circumvention](https://github.com/haimbilia/WiiU-300-Limit-Circumvention) plugin
+lets the Wii U Menu show more than 300 entries (up to 810), but it deliberately keeps the
+`BaristaAccountSaveFile.dat` layout unchanged: the main menu still has 300 stored slots, and
+entries beyond the save's fixed records are rebuilt by the Wii U Menu each time instead of being
+saved. Menu Sort Aroma works on that unchanged file, so it is safe to use alongside the plugin:
+
+- the 300 stored main-menu slots and every folder are sorted as usual;
+- entries the plugin adds beyond what the save file can hold aren't stored anywhere Menu Sort Aroma
+  can reach, so they aren't sorted - the Wii U Menu places those itself;
+- the `Items count` shown at the end uses the plugin's 810-item limit.
+
 ## What changed from the original
 
 - `dynamic_libs` (runtime function-pointer loading) → native [wut](https://github.com/devkitPro/wut)
