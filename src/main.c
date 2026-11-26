@@ -27,6 +27,19 @@
 #define HBL_TITLE_ID 0x13374842
 #define MAX_ITEMS_COUNT 810
 
+/* BaristaAccountSaveFile.dat has a fixed layout, independent of how many
+ * titles are installed: the main menu is always 300 NAND slots followed by
+ * 300 USB slots (16 bytes each), then 60 folders starting at 0x2D24, each
+ * with 60 NAND + 60 USB slots and a 56-byte header. MAX_ITEMS_COUNT above is
+ * only the total-items limit shown to the user - it must never be used to
+ * walk the file, or the main-menu pass runs past its 300 slots and
+ * overwrites the USB and folder sections (issue #2). */
+#define MAIN_MENU_SLOTS 300
+#define FOLDER_SLOTS 60
+#define FOLDER_COUNT 60
+#define FOLDERS_OFFSET 0x002D24
+#define FOLDER_SIZE (FOLDER_SLOTS * 16 * 2 + 56)
+
 static const char *cafeXmlPath = "storage_slc:/proc/prefs/cafe.xml";
 static const char *syshaxXmlPath = "storage_slc:/config/syshax.xml";
 static const char *systemXmlPath = "storage_slc:/config/system.xml";
@@ -611,14 +624,14 @@ int main(void)
     }
 
     // Read Menu Data
-    /* These three arrays are sized by MAX_ITEMS_COUNT (810, to support the
-     * 300-title-limit bypass). At ~80 bytes per MenuItemStruct that is ~66 KB,
-     * too large to sit safely on the thread stack, so they are static. This is
-     * safe: this routine is not reentrant, and every slot is explicitly
-     * (re)initialized by the loops below before it is read. */
-    static struct MenuItemStruct menuItem[MAX_ITEMS_COUNT];
-    bool folderExists[61] = {false};
-    static bool moveableItem[MAX_ITEMS_COUNT];
+    /* These three arrays are sized by MAIN_MENU_SLOTS, the largest number of
+     * slots any single menu page (main menu or folder) has in the save file.
+     * They are static to keep them off the thread stack. This is safe: this
+     * routine is not reentrant, and every slot is explicitly (re)initialized
+     * by the loops below before it is read. */
+    static struct MenuItemStruct menuItem[MAIN_MENU_SLOTS];
+    bool folderExists[FOLDER_COUNT + 1] = {false};
+    static bool moveableItem[MAIN_MENU_SLOTS];
     /* True only for slots that actually held a sortable title, as opposed to
      * slots that are movable but simply empty (never assigned a title).
      * Rewriting only wasCollected slots - instead of every movable slot -
@@ -626,7 +639,7 @@ int main(void)
      * dontmove.txt entries, etc.) intact, so they don't visually drift to a
      * different grid position as a side effect of empty gaps elsewhere
      * getting compacted away. */
-    static bool wasCollected[MAX_ITEMS_COUNT];
+    static bool wasCollected[MAIN_MENU_SLOTS];
     folderExists[0] = true;
     char mlcBaristaPath[255] = "";
     sprintf(mlcBaristaPath, "storage_mlc:/usr/save/00050010/%08x/user/%08x/BaristaAccountSaveFile.dat", sysmenuId, (unsigned int)userPersistentId);
@@ -662,6 +675,11 @@ int main(void)
             strcpy(failError, "Memory not allocated for BaristaAccountSaveFile.dat\n");
             goto prgEnd;
         }
+        if (fSize < (size_t)(MAIN_MENU_SLOTS * 16 * 2))
+        {
+            strcpy(failError, "BaristaAccountSaveFile.dat is too small\n");
+            goto prgEnd;
+        }
 
         if (!count)
         {
@@ -676,18 +694,21 @@ int main(void)
         loadHomebrewExcludeList(homebrewExcludePath);
 
         // Main Menu - First pass - Get names. Only movable items are added.
-        for (int fNum = 0; fNum <= 60; fNum++)
+        for (int fNum = 0; fNum <= FOLDER_COUNT; fNum++)
         {
             if (!folderExists[fNum])
                 continue;
             int currItemNum = 0;
             int movableItemsCount = 0;
-            int maxItemsCount = MAX_ITEMS_COUNT;
+            int maxItemsCount = MAIN_MENU_SLOTS;
             int folderOffset = 0;
             if (fNum != 0)
             {
-                maxItemsCount = 60;
-                folderOffset = 0x002D24 + ((fNum - 1) * (60 * 16 * 2 + 56));
+                maxItemsCount = FOLDER_SLOTS;
+                folderOffset = FOLDERS_OFFSET + ((fNum - 1) * FOLDER_SIZE);
+                // Never read or write past the end of the file.
+                if ((size_t)(folderOffset + maxItemsCount * 16 * 2) > fSize)
+                    continue;
             }
             int usbOffset = maxItemsCount * 16;
             int diagNonEmpty = 0;
@@ -718,11 +739,11 @@ int main(void)
                 }
                 if ((fNum == 0) && (type == MENU_ITEM_FLDR))
                 {
-                    if ((id > 0) && (id <= 60))
+                    if ((id > 0) && (id <= FOLDER_COUNT))
                         folderExists[id] = true;
                     if (count)
                         screenPrint("Folder icon: mainSlot=%d id=%u %s", i, id,
-                                    (id > 0 && id <= 60) ? "(recognized)" : "(OUT OF RANGE)");
+                                    (id > 0 && id <= FOLDER_COUNT) ? "(recognized)" : "(OUT OF RANGE)");
                     moveableItem[i] = false;
                     continue;
                 }
